@@ -1,0 +1,65 @@
+env_files = ["./.env-scripts/dev.yaml"]
+
+[tasks.format]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--", "--emit=files"]
+
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+
+[tasks.build]
+command = "cargo"
+args = ["build"]
+# dependencies = ["clean"]
+
+[tasks.test]
+command = "cargo"
+args = ["test"]
+# dependencies = ["clean"]
+
+[tasks.migrate]
+private = false
+extend = "subcommand"
+env = { "SUBCOMMAND_PREFIX" = "migrate" }
+
+[tasks.database]
+private = false
+extend = "subcommand"
+env = { "SUBCOMMAND_PREFIX" = "database" }
+
+[tasks.subcommand]
+private = true
+script = '''
+#!@duckscript
+if equals ${SUBCOMMAND_PREFIX} "migrate"
+    if equals ${1} "add"
+        set_env MIGRATION ${2}
+    end
+end
+cm_run_task ${SUBCOMMAND_PREFIX}_${1}
+'''
+
+[tasks.migrate_add]
+private = true
+command = "sqlx"
+args = ["migrate", "add", "-r", "${MIGRATION}"]
+
+[tasks.migrate_run]
+private = true
+command = "sqlx"
+args = ["migrate", "run"]
+
+[tasks.migrate_revert]
+private = true
+command = "sqlx"
+args = ["migrate", "revert"]
+
+[tasks.database_reset]
+private = true
+command = "sqlx"
+args = ["database", "reset"]
+
+[tasks.my-flow]
+dependencies = ["format", "build", "test"]
