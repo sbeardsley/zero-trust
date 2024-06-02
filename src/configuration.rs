@@ -1,8 +1,15 @@
+use config::Environment;
 use secrecy::{ExposeSecret, Secret};
 #[derive(serde::Deserialize)]
 pub struct Settings {
     pub database: DatabaseSettings,
-    pub application_port: u16,
+    pub application: ApplicationSettings,
+}
+
+#[derive(serde::Deserialize)]
+pub struct ApplicationSettings {
+    pub host: String,
+    pub port: u16,
 }
 
 #[derive(serde::Deserialize)]
@@ -15,11 +22,13 @@ pub struct DatabaseSettings {
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
+    let source = Environment::default().separator("_").ignore_empty(true);
     let settings = config::Config::builder()
         .add_source(config::File::new(
             "configuration.yaml",
             config::FileFormat::Yaml,
         ))
+        .add_source(source)
         .build()?;
     settings.try_deserialize::<Settings>()
 }
